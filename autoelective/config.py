@@ -46,7 +46,7 @@ class BaseConfig(object):
     def getdict(self, section, options):
         assert isinstance(options, (list, tuple, set))
         d = dict(self._config.items(section))
-        if not all( k in d for k in options ):
+        if not all(k in d for k in options):
             raise UserInputException("Incomplete course in section %r, %s must all exist." % (section, options))
         return d
 
@@ -56,7 +56,7 @@ class BaseConfig(object):
 
     def ns_sections(self, ns):
         ns = ns.strip()
-        ns_sects = OrderedDict() # { id: str(section) }
+        ns_sects = OrderedDict()  # { id: str(section) }
         for s in self._config.sections():
             mat = _reNamespacedSection.match(s)
             if mat is None:
@@ -67,7 +67,7 @@ class BaseConfig(object):
             if id_ in ns_sects:
                 raise DuplicateSectionError("%s:%s" % (ns, id_))
             ns_sects[id_] = s
-        return [ (id_, s) for id_, s in ns_sects.items() ] # [ (id, str(section)) ]
+        return [(id_, s) for id_, s in ns_sects.items()]  # [ (id, str(section)) ]
 
 
 class AutoElectiveConfig(BaseConfig, metaclass=Singleton):
@@ -77,7 +77,7 @@ class AutoElectiveConfig(BaseConfig, metaclass=Singleton):
 
     ## Constraints
 
-    ALLOWED_IDENTIFY = ("bzx","bfx")
+    ALLOWED_IDENTIFY = ("bzx", "bfx")
 
     ## Model
 
@@ -155,6 +155,22 @@ class AutoElectiveConfig(BaseConfig, metaclass=Singleton):
     def monitor_port(self):
         return self.getint("monitor", "port")
 
+    @property
+    def disable_push(self):
+        return self.getboolean("notification", "disable_push")
+
+    @property
+    def wechat_token(self):
+        return self.get("notification", "token")
+
+    @property
+    def verbosity(self):
+        return self.getint("notification", "verbosity")
+
+    @property
+    def minimum_interval(self):
+        return self.getfloat("notification", "minimum_interval")
+
     # [course]
 
     @property
@@ -162,7 +178,7 @@ class AutoElectiveConfig(BaseConfig, metaclass=Singleton):
         cs = OrderedDict()  # { id: Course }
         rcs = {}
         for id_, s in self.ns_sections('course'):
-            d = self.getdict(s, ('name','class','school'))
+            d = self.getdict(s, ('name', 'class', 'school'))
             d.update(class_no=d.pop('class'))
             c = Course(**d)
             cs[id_] = c
@@ -187,7 +203,7 @@ class AutoElectiveConfig(BaseConfig, metaclass=Singleton):
     @property
     def delays(self):
         ds = OrderedDict()  # { id: Delay }
-        cid_id = {} # { cid: id }
+        cid_id = {}  # { cid: id }
         for id_, s in self.ns_sections('delay'):
             cid = self.get(s, 'course')
             threshold = self.getint(s, 'threshold')

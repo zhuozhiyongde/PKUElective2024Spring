@@ -10,7 +10,7 @@ def mkdir(path):
     if not os.path.exists(path):
         os.mkdir(path)
 
-def absp(*paths):
+def get_abs_path(*paths):
     return os.path.normpath(os.path.abspath(os.path.join(os.path.dirname(__file__), *paths)))
 
 def read_list(file, encoding='utf-8-sig', **kwargs):

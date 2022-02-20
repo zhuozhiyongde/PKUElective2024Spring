@@ -6,7 +6,7 @@ from PIL import Image
 
 from .captcha import Captcha
 from ..config import BaseConfig
-from .._internal import absp
+from .._internal import get_abs_path
 from ..exceptions import OperationFailedError, OperationTimeoutError, RecognizerError
 
 class APIConfig(object):
@@ -14,7 +14,7 @@ class APIConfig(object):
     _DEFAULT_CONFIG_PATH = '../apikey.json'
 
     def __init__(self, path=_DEFAULT_CONFIG_PATH):
-        with open(absp(path), 'r') as handle:
+        with open(get_abs_path(path), 'r') as handle:
             self._apikey = json.load(handle)
         assert 'username' in self._apikey.keys() and 'password' in self._apikey.keys()
 
@@ -35,11 +35,13 @@ class TTShituRecognizer(object):
         self._config = APIConfig()
         
     def recognize(self, raw):
+        _typeid_ = 1003
         encode = TTShituRecognizer._to_b64(raw)
         data = {
             "username": self._config.uname, 
             "password": self._config.pwd,
-            "image": encode
+            "image": encode,
+            "typeid": _typeid_
         }
         try:
             result = json.loads(requests.post(TTShituRecognizer._RECOGNIZER_URL, json=data, timeout=20).text)

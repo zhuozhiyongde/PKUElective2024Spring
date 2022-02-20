@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # filename: loop.py
-# modified: 2019-09-11
 
 import os
 import time
@@ -22,14 +21,15 @@ from .parser import get_tables, get_courses, get_courses_with_detail, get_sida
 from .hook import _dump_request
 from .iaaa import IAAAClient
 from .elective import ElectiveClient
-from .const import CAPTCHA_CACHE_DIR, USER_AGENT_LIST, WEB_LOG_DIR
+from .const import CAPTCHA_CACHE_DIR, USER_AGENT_LIST, WEB_LOG_DIR, WECHAT_MSG, WECHAT_PREFIX
 from .exceptions import *
 from ._internal import mkdir
+from .notification.wechat_push import Notify
 
 environ = Environ()
 config = AutoElectiveConfig()
 cout = ConsoleLogger("loop")
-ferr = FileLogger("loop.error") # loop 的子日志，同步输出到 console
+ferr = FileLogger("loop.error")  # loop 的子日志，同步输出到 console
 
 username = config.iaaa_id
 password = config.iaaa_password
@@ -44,6 +44,7 @@ login_loop_interval = config.login_loop_interval
 elective_client_pool_size = config.elective_client_pool_size
 elective_client_max_life = config.elective_client_max_life
 is_print_mutex_rules = config.is_print_mutex_rules
+notify = Notify(_disable_push=config.disable_push, _token=config.wechat_token, _interval_lock=config.minimum_interval, _verbosity=config.verbosity)
 
 config.check_identify(identity)
 config.check_supply_cancel_page(supply_cancel_page)
@@ -60,15 +61,18 @@ reloginPool = Queue(maxsize=elective_client_pool_size)
 
 goals = environ.goals  # let N = len(goals);
 ignored = environ.ignored
-mutexes = np.zeros(0, dtype=np.uint8) # uint8 [N][N];
-delays = np.zeros(0, dtype=np.int) # int [N];
+mutexes = np.zeros(0, dtype=np.uint8)  # uint8 [N][N];
+delays = np.zeros(0, dtype=np.int)  # int [N];
 
 killedElective = ElectiveClient(-1)
 NO_DELAY = -1
 
+notify.send_wechat_push(msg=WECHAT_MSG["s"], prefix=WECHAT_PREFIX[3])
+
 
 class _ElectiveNeedsLogin(Exception):
     pass
+
 
 class _ElectiveExpired(Exception):
     pass
@@ -80,8 +84,10 @@ def _get_refresh_interval():
     delta = (random.random() * 2 - 1) * refresh_random_deviation * refresh_interval
     return refresh_interval + delta
 
+
 def _ignore_course(course, reason):
     ignored[course.to_simplified()] = reason
+
 
 def _add_error(e):
     clz = e.__class__
@@ -89,10 +95,12 @@ def _add_error(e):
     key = "[%s] %s" % (e.code, name) if hasattr(clz, "code") else name
     environ.errors[key] += 1
 
+
 def _format_timestamp(timestamp):
     if timestamp == -1:
         return str(timestamp)
     return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(timestamp))
+
 
 def _dump_respose_content(content, filename):
     path = os.path.join(_USER_WEB_LOG_DIR, filename)
@@ -101,7 +109,6 @@ def _dump_respose_content(content, filename):
 
 
 def run_iaaa_loop():
-
     elective = None
 
     while True:
@@ -120,7 +127,7 @@ def run_iaaa_loop():
 
         try:
 
-            iaaa = IAAAClient(timeout=iaaa_client_timeout) # not reusable
+            iaaa = IAAAClient(timeout=iaaa_client_timeout)  # not reusable
             iaaa.set_user_agent(user_agent)
 
             # request elective's home page to get cookies
@@ -149,9 +156,8 @@ def run_iaaa_loop():
                 elective.set_expired_time(-1)
             else:
                 elective.set_expired_time(int(time.time()) + elective_client_max_life)
-
             cout.info("Login success (client: %s, expired_time: %s)" % (
-                      elective.id, _format_timestamp(elective.expired_time)))
+                elective.id, _format_timestamp(elective.expired_time)))
             cout.info("")
 
             electivePool.put_nowait(elective)
@@ -188,7 +194,7 @@ def run_iaaa_loop():
             _add_error(e)
 
         except CaughtCheatingError as e:
-            ferr.critical(e) # 严重错误
+            ferr.critical(e)  # 严重错误
             _add_error(e)
             raise e
 
@@ -219,7 +225,6 @@ def run_iaaa_loop():
 
 
 def run_elective_loop():
-
     elective = None
     noWait = False
 
@@ -227,7 +232,7 @@ def run_elective_loop():
 
     cs = config.courses  # OrderedDict
     N = len(cs)
-    cid_cix = {} # { cid: cix }
+    cid_cix = {}  # { cid: cix }
 
     for ix, (cid, c) in enumerate(cs.items()):
         goals.append(c)
@@ -316,7 +321,7 @@ def run_elective_loop():
 
         ## print current plans
 
-        current = [ c for c in goals if c not in ignored ]
+        current = [c for c in goals if c not in ignored]
         if len(current) > 0:
             cout.info("> Current tasks")
             cout.info(line)
@@ -340,7 +345,7 @@ def run_elective_loop():
         if np.any(mutexes):
             cout.info("> Mutex rules")
             cout.info(line)
-            ixs = [ (ix1, ix2) for ix1, ix2 in np.argwhere( mutexes == 1 ) if ix1 < ix2 ]
+            ixs = [(ix1, ix2) for ix1, ix2 in np.argwhere(mutexes == 1) if ix1 < ix2]
             if is_print_mutex_rules:
                 for ix, (ix1, ix2) in enumerate(ixs):
                     cout.info("%02d. %s --x-- %s" % (ix + 1, goals[ix1], goals[ix2]))
@@ -351,10 +356,10 @@ def run_elective_loop():
 
         ## print delay rules
 
-        if np.any( delays != NO_DELAY ):
+        if np.any(delays != NO_DELAY):
             cout.info("> Delay rules")
             cout.info(line)
-            ds = [ (cix, threshold) for cix, threshold in enumerate(delays) if threshold != NO_DELAY ]
+            ds = [(cix, threshold) for cix, threshold in enumerate(delays) if threshold != NO_DELAY]
             for ix, (cix, threshold) in enumerate(ds):
                 cout.info("%02d. %s --- %d" % (ix + 1, goals[cix], threshold))
             cout.info(line)
@@ -363,7 +368,7 @@ def run_elective_loop():
         if len(current) == 0:
             cout.info("No tasks")
             cout.info("Quit elective loop")
-            reloginPool.put_nowait(killedElective) # kill signal
+            reloginPool.put_nowait(killedElective)  # kill signal
             return
 
         ## print client info
@@ -385,7 +390,7 @@ def run_elective_loop():
                 except Exception as e:
                     cout.warning("Logout error")
                     cout.exception(e)
-                raise _ElectiveExpired   # quit this loop
+                raise _ElectiveExpired  # quit this loop
 
             ## check supply/cancel page
 
@@ -395,7 +400,7 @@ def run_elective_loop():
 
                 cout.info("Get SupplyCancel page %s" % supply_cancel_page)
 
-                r = page_r = elective.get_SupplyCancel()
+                r = page_r = elective.get_SupplyCancel(username)
                 tables = get_tables(r._tree)
                 try:
                     elected = get_courses(tables[1])
@@ -426,7 +431,7 @@ def run_elective_loop():
                         raise OperationFailedError(msg="unable to get normal Supplement page %s" % supply_cancel_page)
 
                     cout.info("Get Supplement page %s" % supply_cancel_page)
-                    r = page_r = elective.get_supplement(page=supply_cancel_page) # 双学位第二页
+                    r = page_r = elective.get_supplement(username, page=supply_cancel_page)  # 双学位第二页
                     tables = get_tables(r._tree)
                     try:
                         elected = get_courses(tables[1])
@@ -434,7 +439,7 @@ def run_elective_loop():
                     except IndexError as e:
                         cout.warning("IndexError encountered")
                         cout.info("Get SupplyCancel first to prevent empty table returned")
-                        _ = elective.get_SupplyCancel() # 遇到空页面时请求一次补退选主页，之后就可以不断刷新
+                        _ = elective.get_SupplyCancel(username)  # 遇到空页面时请求一次补退选主页，之后就可以不断刷新
                     else:
                         break
                     finally:
@@ -444,21 +449,21 @@ def run_elective_loop():
 
             cout.info("Get available courses")
 
-            tasks = [] # [(ix, course)]
+            tasks = []  # [(ix, course)]
             for ix, c in enumerate(goals):
                 if c in ignored:
                     continue
                 elif c in elected:
                     cout.info("%s is elected, ignored" % c)
                     _ignore_course(c, "Elected")
-                    for (mix, ) in np.argwhere( mutexes[ix,:] == 1 ):
+                    for (mix,) in np.argwhere(mutexes[ix, :] == 1):
                         mc = goals[mix]
                         if mc in ignored:
                             continue
                         cout.info("%s is simultaneously ignored by mutex rules" % mc)
                         _ignore_course(mc, "Mutex rules")
                 else:
-                    for c0 in plans: # c0 has detail
+                    for c0 in plans:  # c0 has detail
                         if c0 == c:
                             if c0.is_available():
                                 delay = delays[ix]
@@ -471,7 +476,7 @@ def run_elective_loop():
                     else:
                         raise UserInputException("%s is not in your course plan, please check your config." % c)
 
-            tasks = deque([ (ix, c) for ix, c in tasks if c not in ignored ]) # filter again and change to deque
+            tasks = deque([(ix, c) for ix, c in tasks if c not in ignored])  # filter again and change to deque
 
             ## elect available courses
 
@@ -488,9 +493,9 @@ def run_elective_loop():
                 is_mutex = False
 
                 # dynamically filter course by mutex rules
-                for (mix, ) in np.argwhere( mutexes[ix,:] == 1 ):
+                for (mix,) in np.argwhere(mutexes[ix, :] == 1):
                     mc = goals[mix]
-                    if mc in elected: # ignore course in advanced
+                    if mc in elected:  # ignore course in advanced
                         is_mutex = True
                         cout.info("%s --x-- %s" % (course, mc))
                         cout.info("%s is ignored by mutex rules in advance" % course)
@@ -503,7 +508,7 @@ def run_elective_loop():
                 cout.info("Try to elect %s" % course)
 
                 ## validate captcha first
-                recognizer_attemp = 0
+
                 while True:
 
                     cout.info("Fetch a captcha")
@@ -512,9 +517,9 @@ def run_elective_loop():
                     captcha = recognizer.recognize(r.content)
                     cout.info("Recognition result: %s" % captcha.code)
 
-                    r = elective.get_Validate(captcha.code, config.iaaa_id)
+                    r = elective.get_Validate(username, captcha.code)
                     try:
-                        res = r.json()["valid"]  # 可能会返回一个错误网页 ...
+                        res = r.json()["valid"]  # 可能会返回一个错误网页
                     except Exception as e:
                         ferr.error(e)
                         raise OperationFailedError(msg="Unable to validate captcha")
@@ -524,15 +529,11 @@ def run_elective_loop():
                         break
                     elif res == "0":
                         cout.info("Validation failed")
-                        # captcha.save(CAPTCHA_CACHE_DIR)
-                        # cout.info("Save %s to %s" % (captcha, CAPTCHA_CACHE_DIR))
+                        # notify.send_wechat_push(msg=WECHAT_MSG[2], prefix=WECHAT_PREFIX[2])
+                        cout.info("Auto error caching skipped for good")
                         cout.info("Try again")
-                        recognizer_attemp += 1
                     else:
                         cout.warning("Unknown validation result: %s" % res)
-
-                    if recognizer_attemp >= RECOGNIZER_MAX_ATTEMPT:
-                        raise RecognizerError(msg="Recognizer: max attempts %d reached" % RECOGNIZER_MAX_ATTEMPT)
 
                 ## try to elect
 
@@ -543,18 +544,21 @@ def run_elective_loop():
                 except ElectionRepeatedError as e:
                     ferr.error(e)
                     cout.warning("ElectionRepeatedError encountered")
+                    notify.send_wechat_push(msg=WECHAT_MSG[3], prefix=WECHAT_PREFIX[3])
                     _ignore_course(course, "Repeated")
                     _add_error(e)
 
                 except TimeConflictError as e:
                     ferr.error(e)
                     cout.warning("TimeConflictError encountered")
+                    notify.send_wechat_push(msg=WECHAT_MSG[4] + str(course), prefix=WECHAT_PREFIX[3])
                     _ignore_course(course, "Time conflict")
                     _add_error(e)
 
                 except ExamTimeConflictError as e:
                     ferr.error(e)
                     cout.warning("ExamTimeConflictError encountered")
+                    notify.send_wechat_push(msg=WECHAT_MSG[5] + str(course), prefix=WECHAT_PREFIX[3])
                     _ignore_course(course, "Exam time conflict")
                     _add_error(e)
 
@@ -590,7 +594,7 @@ def run_elective_loop():
 
                 except ElectionFailedError as e:
                     ferr.error(e)
-                    cout.warning("ElectionFailedError encountered") # 具体原因不明，且不能马上重试
+                    cout.warning("ElectionFailedError encountered")  # 具体原因不明，且不能马上重试
                     _add_error(e)
 
                 except QuotaLimitedError as e:
@@ -599,13 +603,13 @@ def run_elective_loop():
                     if course.used_quota == 0:
                         cout.warning("Abnormal status of %s, a bug of 'elective.pku.edu.cn' found" % course)
                     else:
-                        ferr.critical("Unexcepted behaviour") # 没有理由运行到这里
+                        ferr.critical("Unexcepted behaviour")  # 没有理由运行到这里
                         _add_error(e)
 
                 except ElectionSuccess as e:
                     # 不从此处加入 ignored，而是在下回合根据教学网返回的实际选课结果来决定是否忽略
-                    cout.info("%s is ELECTED (OR WAITLISTED)!" % course)
-
+                    cout.info("%s is ELECTED !" % course)
+                    notify.send_wechat_push(msg=WECHAT_MSG[1] + str(course), prefix=WECHAT_PREFIX[1])
                     # --------------------------------------------------------------------------
                     # Issue #25
                     # --------------------------------------------------------------------------
@@ -622,7 +626,7 @@ def run_elective_loop():
                 except RuntimeError as e:
                     ferr.critical(e)
                     ferr.critical("RuntimeError with Course(name=%r, class_no=%d, school=%r, status=%s, href=%r)" % (
-                                    course.name, course.class_no, course.school, course.status, course.href))
+                        course.name, course.class_no, course.school, course.status, course.href))
                     # use this private function of 'hook.py' to dump the response from `get_SupplyCancel` or `get_supplement`
                     file = _dump_request(page_r)
                     ferr.critical("Dump response from 'get_SupplyCancel / get_supplement' to %s" % file)
@@ -682,12 +686,7 @@ def run_elective_loop():
             noWait = True
 
         except CaughtCheatingError as e:
-            ferr.critical(e) # critical error !
-            _add_error(e)
-            raise e
-
-        except RecognizerError as e:
-            ferr.critical(e)
+            ferr.critical(e)  # critical error !
             _add_error(e)
             raise e
 
@@ -721,7 +720,7 @@ def run_elective_loop():
 
         finally:
 
-            if elective is not None: # change elective client
+            if elective is not None:  # change elective client
                 electivePool.put_nowait(elective)
                 elective = None
 

@@ -7,6 +7,7 @@ from .utils import Singleton
 from collections import defaultdict
 import numpy as np
 
+
 class Environ(object, metaclass=Singleton):
 
     def __init__(self):
@@ -18,5 +19,5 @@ class Environ(object, metaclass=Singleton):
         self.iaaa_loop_thread = None
         self.elective_loop_thread = None
         self.monitor_thread = None
-        self.goals = [] # [Course]
-        self.ignored = {} # {Course, reason}
+        self.goals = []  # [Course]
+        self.ignored = {}  # {Course, reason}
