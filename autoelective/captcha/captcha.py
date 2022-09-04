@@ -44,7 +44,10 @@ class Captcha(object):
         dim = self._denoised
         segs = self._segments
         spans = self._spans
-        md5 = xMD5(oim.tobytes())
+        try:
+            md5 = xMD5(oim.tobytes())
+        except AttributeError as _:
+            return
 
         oim.save(os.path.join(folder, "%s_original_%s.jpg" % (code, md5)))
         dim.save(os.path.join(folder, "%s_denoised_%s.jpg" % (code, md5)))

@@ -11,26 +11,30 @@ from requests.compat import json
 
 
 def b(s):
-    if isinstance(s, (str,int,float)):
+    if isinstance(s, (str, int, float)):
         return str(s).encode("utf-8")
     elif isinstance(s, bytes):
         return s
     else:
         raise TypeError("unsupport type %s of %r" % (type(s), s))
 
+
 def u(s):
     if isinstance(s, bytes):
         return s.decode("utf-8")
-    elif isinstance(s, (str,int,float)):
+    elif isinstance(s, (str, int, float)):
         return str(s)
     else:
         raise TypeError("unsupport type %s of %r" % (type(s), s))
 
+
 def xMD5(data):
     return hashlib.md5(b(data)).hexdigest()
 
+
 def xSHA1(data):
     return hashlib.sha1(b(data)).hexdigest()
+
 
 def json_load(file, *args, **kwargs):
     if not os.path.exists(file):
@@ -41,13 +45,16 @@ def json_load(file, *args, **kwargs):
         except json.JSONDecodeError:
             return None
 
+
 def json_dump(obj, file, *args, **kwargs):
     with open(file, "w", encoding="utf-8") as fp:
         json.dump(obj, fp, *args, **kwargs)
 
+
 def pickle_gzip_dump(obj, file):
     with gzip.open(file, "wb") as fp:
         pickle.dump(obj, fp)
+
 
 def pickle_gzip_load(file):
     with gzip.open(file, "rb") as fp:
