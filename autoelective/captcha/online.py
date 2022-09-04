@@ -16,7 +16,12 @@ class APIConfig(object):
     def __init__(self, path=_DEFAULT_CONFIG_PATH):
         with open(get_abs_path(path), 'r') as handle:
             self._apikey = json.load(handle)
-        assert 'username' in self._apikey.keys() and 'password' in self._apikey.keys()
+        try:
+            assert 'username' in self._apikey.keys() and 'password' in self._apikey.keys()
+            assert 'RecognitionTypeid' in self._apikey.keys()
+        except AssertionError as e:
+            print("Check your apikey.json for necessary key")
+            exit(-1)
 
     @property
     def uname(self):
@@ -25,6 +30,10 @@ class APIConfig(object):
     @property
     def pwd(self):
         return self._apikey['password']
+
+    @property
+    def typeid(self):
+        return int(self._apikey['RecognitionTypeid'])
 
 
 class TTShituRecognizer(object):
@@ -35,7 +44,7 @@ class TTShituRecognizer(object):
         self._config = APIConfig()
         
     def recognize(self, raw):
-        _typeid_ = 1003
+        _typeid_ = self._config.typeid
         encode = TTShituRecognizer._to_b64(raw)
         data = {
             "username": self._config.uname, 
