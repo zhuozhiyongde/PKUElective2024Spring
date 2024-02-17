@@ -62,7 +62,7 @@ reloginPool = Queue(maxsize=elective_client_pool_size)
 goals = environ.goals  # let N = len(goals);
 ignored = environ.ignored
 mutexes = np.zeros(0, dtype=np.uint8)  # uint8 [N][N];
-delays = np.zeros(0, dtype=np.int)  # int [N];
+delays = np.zeros(0, dtype=np.int32)  # int [N];
 
 killedElective = ElectiveClient(-1)
 NO_DELAY = -1
