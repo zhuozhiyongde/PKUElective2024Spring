@@ -63,6 +63,7 @@ class Notify(object):
                 "body": f"{prefix}{msg}",
                 "sound": "minuet.caf",
                 "icon": "https://cdn.arthals.ink/pku.jpg",
+                "level": "timeSensitive",
             }
 
             req = requests.post(f"https://api.day.app/{token}/", data=data)
