@@ -30,7 +30,7 @@ from .const import (
 )
 from .exceptions import *
 from ._internal import mkdir
-from .notification.wechat_push import Notify
+from .notification.bark_push import Notify
 
 environ = Environ()
 config = AutoElectiveConfig()

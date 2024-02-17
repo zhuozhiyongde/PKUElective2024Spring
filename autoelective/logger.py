@@ -9,7 +9,7 @@ from logging.handlers import TimedRotatingFileHandler
 from .config import AutoElectiveConfig
 from .const import ERROR_LOG_DIR
 from ._internal import mkdir
-from .notification.wechat_push import Notify
+from .notification.bark_push import Notify
 from .const import WECHAT_MSG, WECHAT_PREFIX
 
 config = AutoElectiveConfig()

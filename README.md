@@ -1,38 +1,45 @@
 # PKUAutoElective 2022 Spring Version
 
-## (可选)推送刷课进度、刷课机运行状态和错误信息到微信（需要用到第三方平台sre24）
+## 更新日志
 
-推送 token 值通过微信扫码登录 https://sre24.com 「设置」页面获取，对应修改config.ini中notification信息
-    
-    disable_push = 0  (默认为1，即不接收)
-    token = xxxxx  (您扫码关注公众号后，得到的token值，请不要加双引号)
-    verbosity = 1 (推送消息详细级别，1为推送选课成功、失败；2为在此基础上推送所有ERROR类型消息)
-    minimum_interval = -1 (最小消息时间间隔，单位为秒，若消息产生时，距离上次成功发送不足这一时间，则取消发送。-1为不设置)
-保存后，重启刷课机生效。
+**感谢 zhongxinghong, Mzhhh, KingOfDeBug, Totoro-Li 等同学**
 
-可以通过notification/wechat_push.py中的test_notify()以测试设置是否正确。
+**Update at Feb 17, 2024**：修改通知方式为 Bark，并修复了一个 Numpy 版本更新带来的类型 Bug，添加了 `requirements.txt` 以便安装依赖。
 
-**Update at Feb 21, 2022**: 验证码错误时，少数情况下重试会出现`NoneType' object has no attribute 'tobytes'`报错，且exceptions中并未提供处理机制。考虑到Captcha类成员函数save()对主要功能并无影响，故删除loop.py中相关调用以避免程序异常停止。
+**Update at Feb 21, 2022**: 验证码错误时，少数情况下重试会出现`NoneType' object has no attribute 'tobytes'`报错，且 exceptions 中并未提供处理机制。考虑到 Captcha 类成员函数 save()对主要功能并无影响，故删除 loop.py 中相关调用以避免程序异常停止。
 
-**Update at Feb 20, 2022**: 对KingOfDebug同学的repo出现`[104] unable to parse HTML content`的问题，对parsing.py, captcha/等部分进行了替换，同步修改了loop.py
-同时对captcha/online.py中的TTShituRecognizer类进行修改，对data增加typeid==7，调用平台的无感学习模型，规避TT平台默认的英文数字混合，在改版后识别率欠佳的问题。
+**Update at Feb 20, 2022**: 对 KingOfDebug 同学的 repo 出现`[104] unable to parse HTML content`的问题，对 parsing.py, captcha/等部分进行了替换，同步修改了 loop.py
+同时对 captcha/online.py 中的 TTShituRecognizer 类进行修改，对 data 增加 typeid==7，调用平台的无感学习模型，规避 TT 平台默认的英文数字混合，在改版后识别率欠佳的问题。
 
-## 感谢zhongxinghong, Mzhhh, KingOfDeBug等同学
+**Update at Mar 7, 2022**: 修改了 `get_supplement` 的 API 参数，已经可以实现课程列表页面的正常跳转，请更新至最新 commit 版本。
 
-**Update at Mar 7 15:28 (UTC+8)**: 修改了 `get_supplement` 的 API 参数，已经可以实现课程列表页面的正常跳转，请更新至最新 commit 版本。
+本项目基于 [PKUElective2022Spring](https://github.com/Totoro-Li/PKUElective2022Spring)，原仓库对 2021 春季学期的选课网站 API 改动进行了调整。并针对验证码系统的改动，将识别系统转为在线商用平台 [TT 识图](http://www.ttshitu.com)（打钱！打钱！），目前识别准确度仍然略微堪忧（但是可用）。
 
-本项目基于 [PKUAutoElective](https://github.com/zhongxinghong/PKUAutoElective)，对 2021 春季学期的选课网站 API 改动进行了调整。并针对验证码系统的改动，将识别系统转为在线商用平台 [TT识图](http://www.ttshitu.com)（打钱！打钱！），目前识别准确度仍然略微堪忧。
+本项目在此基础上，修改通知方式为 Bark，并修复了一个 Numpy 版本更新带来的类型 Bug，添加了 `requirements.txt` 以便安装依赖。
 
 ## 安装
 
-请参考 [PKUAutoElective](https://github.com/zhongxinghong/PKUAutoElective) 项目提供的安装指南进行安装，但本项目**不**依赖于 `pytorch`，因此可以**省略**其中的以下部分
+```bash
+git clone https://github.com/zhuozhiyongde/PKUElective2024Spring.git
+cd PKUElective2024Spring
+pip install -r requirements.txt
+```
 
-> 安装 PyTorch，从 PyTorch 官网 中选择合适的条件获得下载命令，然后复制粘贴到命令行中运行即可下载安装。（注：本项目不需要 cuda，当然你可以安装带 gpu 优化的版本）
-> 
-> ......
-> 
-> PyTorch 安装时间可能比较长，需耐心等待。
-> 如果实在无法安装，可以考虑用其他方式安装 PyTorch，详见附页 PyTorch 安装
+## Bark 进度通知（可选）
+
+在 [Bark App](https://bark.day.app/) （仅限 iOS）的示例请求中获得推送 Key（注意不是设置里的 Device Token），然后修改 `config.ini` 中的 `notification` 部分：
+
+```ini
+[notification]
+disable_push = 0  (默认为1，即不接收)
+token = xxxxx  (你的 Bark key)
+verbosity = 1 (推送消息详细级别，1为推送选课成功、失败；2为在此基础上推送所有ERROR类型消息)
+minimum_interval = -1 (最小消息时间间隔，单位为秒，若消息产生时，距离上次成功发送不足这一时间，则取消发送。-1为不设置)
+```
+
+保存后，重启刷课机生效。
+
+可以通过 notification/bark_push.py 中的 test_notify()以测试设置是否正确。
 
 ## 配置文件
 
@@ -44,12 +51,12 @@
 
 **请首先将 apikey.sample.ini 复制一份并改名为 apikey.ini，并按照以下说明进行配置。**
 
-该文件为 [TT识图](http://www.ttshitu.com) 平台的 API 密钥，在平台注册后，填入用户名与密码即可。由于该 API 需要收费，须在平台充值后方可使用（1 RMB 足够用到天荒地老了）。
+该文件为 [TT 识图](http://www.ttshitu.com) 平台的 API 密钥，在平台注册后，填入用户名与密码即可。由于该 API 需要收费，须在平台充值后方可使用（1 RMB 足够用到天荒地老了）。
 
 ```json
 {
     "username": "xiaoming",
-    "password": "xiaominghaoshuai" 
+    "password": "xiaominghaoshuai"
 }
 ```
 
@@ -60,7 +67,7 @@
 将项目 clone 至本地后，切换至项目根目录下并运行 `main.py` 即可。
 
 ```
-cd PKUElective2021Spring
+cd PKUElective2024Spring
 python3 main.py
 ```
 
@@ -70,12 +77,18 @@ python3 main.py
 
 关于支持的命令行参数，参见 [PKUAutoElective](https://github.com/zhongxinghong/PKUAutoElective) 的使用说明。
 
+一个比较常用的示例是，使用多个配置文件：
+
+```bash
+python main.py -c another-config.ini
+```
+
 ### 测试识图平台
 
 配置好 `apikey.json` 后，在命令行运行以下指令以测试在线识图是否正常工作
 
 ```
-python -c "import base64; from autoelective.captcha import TTShituRecognizer; 
+python -c "import base64; from autoelective.captcha import TTShituRecognizer;
 c = TTShituRecognizer().recognize(base64.b64decode(
 'iVBORw0KGgoAAAANSUhEUgAAAIIAAAA0CAMAAABxThCnAAADAFBMVEUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAz'
 'AABmAACZAADMAAD/AAAAMwAzMwBmMwCZMwDMMwD/MwAAZgAzZgBmZgCZZgDMZgD/ZgAAmQAzmQBmmQCZmQDMmQD/mQAAzAAzzABm'
@@ -145,9 +158,9 @@ c = TTShituRecognizer().recognize(base64.b64decode(
 Captcha('vfg8') True
 ```
 
-
 ## 注意事项
 
-* 作者可能无视 issue 和 PR，如果您有更好的改进想法，请最好 clone 一份后自行改动
-* 请不要在公开场合传播此项目，以免造成不必要的麻烦
-* 刷课有风险 USE AT YOUR OWN RISK!
+-   作者可能无视 issue 和 PR，如果您有更好的改进想法，请最好 clone 一份后自行改动
+-   请不要在公开场合传播此项目，以免造成不必要的麻烦
+-   刷课有风险 USE AT YOUR OWN RISK!
+-   **暂时不能给你明确的答复，这个需要你自己衡量！**
