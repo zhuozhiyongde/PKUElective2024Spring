@@ -1,17 +1,19 @@
 # PKUAutoElective 2024 Spring Version
 
+![Start-Elective](./assets/bark-notification.jpeg)
+
 ## 更新日志
 
 **感谢 zhongxinghong, Mzhhh, KingOfDeBug, Totoro-Li 等同学**
 
-**Update at Feb 17, 2024**：修改通知方式为 Bark，并修复了一个 Numpy 版本更新带来的类型 Bug，添加了 `requirements.txt` 以便安装依赖。
-
-**Update at Feb 21, 2022**: 验证码错误时，少数情况下重试会出现`NoneType' object has no attribute 'tobytes'`报错，且 exceptions 中并未提供处理机制。考虑到 Captcha 类成员函数 save()对主要功能并无影响，故删除 loop.py 中相关调用以避免程序异常停止。
-
-**Update at Feb 20, 2022**: 对 KingOfDebug 同学的 repo 出现`[104] unable to parse HTML content`的问题，对 parsing.py, captcha/等部分进行了替换，同步修改了 loop.py
-同时对 captcha/online.py 中的 TTShituRecognizer 类进行修改，对 data 增加 typeid==7，调用平台的无感学习模型，规避 TT 平台默认的英文数字混合，在改版后识别率欠佳的问题。
-
-**Update at Mar 7, 2022**: 修改了 `get_supplement` 的 API 参数，已经可以实现课程列表页面的正常跳转，请更新至最新 commit 版本。
+> **Update at Feb 17, 2024**：修改通知方式为 Bark，并修复了一个 Numpy 版本更新带来的类型 Bug，添加了 `requirements.txt` 以便安装依赖。
+>
+> **Update at Feb 21, 2022**: 验证码错误时，少数情况下重试会出现`NoneType' object has no attribute 'tobytes'`报错，且 exceptions 中并未提供处理机制。考虑到 Captcha 类成员函数 save()对主要功能并无影响，故删除 loop.py 中相关调用以避免程序异常停止。
+>
+> **Update at Feb 20, 2022**: 对 KingOfDebug 同学的 repo 出现`[104] unable to parse HTML content`的问题，对 parsing.py, captcha/等部分进行了替换，同步修改了 loop.py
+> 同时对 captcha/online.py 中的 TTShituRecognizer 类进行修改，对 data 增加 typeid==7，调用平台的无感学习模型，规避 TT 平台默认的英文数字混合，在改版后识别率欠佳的问题。
+>
+> **Update at Mar 7, 2022**: 修改了 `get_supplement` 的 API 参数，已经可以实现课程列表页面的正常跳转，请更新至最新 commit 版本。
 
 本项目基于 [PKUElective2022Spring](https://github.com/Totoro-Li/PKUElective2022Spring)，原仓库对 2021 春季学期的选课网站 API 改动进行了调整。并针对验证码系统的改动，将识别系统转为在线商用平台 [TT 识图](http://www.ttshitu.com)（打钱！打钱！），目前识别准确度仍然略微堪忧（但是可用）。
 
