@@ -62,7 +62,7 @@ class Notify(object):
                 "title": "PKUAutoElective",
                 "body": f"{prefix}{msg}",
                 "sound": "minuet.caf",
-                "icon": "https://cdn.arthals.ink/pku.png",
+                "icon": "https://cdn.arthals.ink/pku.jpg",
             }
 
             req = requests.post(f"https://api.day.app/{token}/", data=data)
