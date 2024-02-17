@@ -1,4 +1,4 @@
-# PKUAutoElective 2022 Spring Version
+# PKUAutoElective 2024 Spring Version
 
 ## 更新日志
 
