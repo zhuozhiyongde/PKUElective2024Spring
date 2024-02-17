@@ -61,7 +61,6 @@ class Notify(object):
             data = {
                 "title": "PKUAutoElective",
                 "body": f"{prefix}{msg}",
-                "sound": "minuet.caf",
                 "icon": "https://cdn.arthals.ink/pku.jpg",
                 "level": "timeSensitive",
             }
