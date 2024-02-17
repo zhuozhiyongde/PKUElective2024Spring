@@ -13,7 +13,12 @@ from .notification.wechat_push import Notify
 from .const import WECHAT_MSG, WECHAT_PREFIX
 
 config = AutoElectiveConfig()
-notify = Notify(_disable_push=config.disable_push, _token=config.wechat_token, _interval_lock=config.minimum_interval, _verbosity=config.verbosity)
+notify = Notify(
+    _disable_push=config.disable_push,
+    _token=config.wechat_token,
+    _interval_lock=config.minimum_interval,
+    _verbosity=config.verbosity,
+)
 
 _USER_ERROR_LOG_DIR = os.path.join(ERROR_LOG_DIR, config.get_user_subpath())
 mkdir(_USER_ERROR_LOG_DIR)
@@ -21,7 +26,9 @@ mkdir(_USER_ERROR_LOG_DIR)
 
 class BaseLogger(object):
     default_level = logging.DEBUG
-    default_format = logging.Formatter("[%(levelname)s] %(name)s, %(asctime)s, %(message)s", "%H:%M:%S")
+    default_format = logging.Formatter(
+        "[%(levelname)s] %(name)s, %(asctime)s, %(message)s", "%H:%M:%S"
+    )
 
     def __init__(self, name, level=None, format=None):
         if self.__class__ is __class__:
@@ -57,7 +64,9 @@ class BaseLogger(object):
 
     def error(self, msg, *args, **kwargs):
         if notify.get_verbosity == 2:
-            notify.send_wechat_push(token=notify.get_token, msg=str(msg), prefix=WECHAT_PREFIX[0])
+            notify.send_bark_push(
+                token=notify.get_token, msg=str(msg), prefix=WECHAT_PREFIX[0]
+            )
         return self._logger.error(msg, *args, **kwargs)
 
     def exception(self, msg, *args, **kwargs):
@@ -65,7 +74,9 @@ class BaseLogger(object):
         return self._logger.exception(msg, *args, **kwargs)
 
     def fatal(self, msg, *args, **kwargs):
-        notify.send_wechat_push(token=notify.get_token, msg=str(msg), prefix=WECHAT_PREFIX[0])
+        notify.send_bark_push(
+            token=notify.get_token, msg=str(msg), prefix=WECHAT_PREFIX[0]
+        )
         return self._logger.fatal(msg, *args, **kwargs)
 
     def critical(self, msg, *args, **kwargs):
@@ -73,7 +84,7 @@ class BaseLogger(object):
 
 
 class ConsoleLogger(BaseLogger):
-    """ 控制台日志输出类 """
+    """控制台日志输出类"""
 
     default_level = logging.DEBUG
 
@@ -85,13 +96,15 @@ class ConsoleLogger(BaseLogger):
 
 
 class FileLogger(BaseLogger):
-    """ 文件日志输出类 """
+    """文件日志输出类"""
 
     default_level = logging.WARNING
 
     def _get_handler(self):
         file = os.path.join(_USER_ERROR_LOG_DIR, "%s.log" % self._name)
-        handler = TimedRotatingFileHandler(file, when='d', interval=1, encoding="utf-8-sig")
+        handler = TimedRotatingFileHandler(
+            file, when="d", interval=1, encoding="utf-8-sig"
+        )
         handler.setLevel(self._level)
         handler.setFormatter(self._format)
         return handler
