@@ -2,3 +2,4 @@ pillow
 requests
 lxml
 flask
+Werkzeug==2.2.2
