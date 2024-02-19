@@ -24,7 +24,7 @@
 ```bash
 git clone https://github.com/zhuozhiyongde/PKUElective2024Spring.git
 cd PKUElective2024Spring
-pip install -r requirements.txt
+pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 
 ## Bark 进度通知（可选）
