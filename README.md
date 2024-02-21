@@ -49,6 +49,8 @@ minimum_interval = -1 (最小消息时间间隔，单位为秒，若消息产生
 
 参考 [PKUAutoElective](https://github.com/zhongxinghong/PKUAutoElective) 项目中的 `config.ini` 配置说明。
 
+你也可以使用我写的 [可视化配置文件生成器](https://docs.arthals.ink/docs/pku-auto-elective)
+
 ### apikey.json
 
 **请首先将 apikey.sample.ini 复制一份并改名为 apikey.ini，并按照以下说明进行配置。**
