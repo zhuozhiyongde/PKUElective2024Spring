@@ -2,6 +2,10 @@
 
 ![Start-Elective](./assets/bark-notification.jpeg)
 
+## 小白版教程
+
+参见 [Arthals' Docs](https://docs.arthals.ink/docs/pku-auto-elective)
+
 ## 更新日志
 
 **感谢 zhongxinghong, Mzhhh, KingOfDeBug, Totoro-Li 等同学**
